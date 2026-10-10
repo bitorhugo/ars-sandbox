@@ -5,6 +5,9 @@
 
 FROM node:22-bookworm-slim
 
+# Fail RUN steps when any command in a pipeline fails (curl | tar, git | sort).
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
 # ARS version to bake in: "latest" resolves to the newest vX.Y.Z release tag.
 # Rebuild to upgrade (the in-session update check is disabled because the
 # plugin directory is read-only).

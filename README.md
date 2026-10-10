@@ -104,6 +104,22 @@ A plain `docker build .` also installs the newest release, but because the
 build argument stays `latest`, Docker reuses the cached layer until you pass
 `--no-cache`.
 
+## Testing
+
+`.github/workflows/test.yml` runs on pushes to `main`, on pull requests, weekly
+(to catch new ARS or Claude Code releases that break the image) and on demand.
+It lints the scripts (shellcheck) and the Dockerfile (hadolint), then builds the
+image on amd64 and arm64 in two variants: the default, and one with the optional
+components flipped (no Pandoc; tectonic and the PDF classifier on). Each build
+checks that the newest ARS release was installed and tagged, and runs
+`tests/smoke.sh` through `bin/ars`, so the tests use the real isolation settings.
+
+Run the smoke tests locally after a build:
+
+```sh
+bin/ars --shell tests/smoke.sh --pandoc
+```
+
 ## Licensing note
 
 ARS is licensed CC BY-NC 4.0. This repository does not include ARS source code;

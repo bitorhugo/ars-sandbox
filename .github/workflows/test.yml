@@ -1,0 +1,83 @@
+name: test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  # The image installs the newest ARS release and Claude Code, so rebuild
+  # weekly to catch upstream changes that break it.
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  ARS_REPO: https://github.com/Imbad0202/academic-research-skills.git
+
+jobs:
+  lint:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: shellcheck
+        run: shellcheck bin/ars bin/ars-build tests/smoke.sh
+      - uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile
+          failure-threshold: warning
+
+  image:
+    name: image (${{ matrix.variant }}, ${{ matrix.runner }})
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu-24.04, ubuntu-24.04-arm]
+        variant: [default, extras]
+        include:
+          - variant: default
+            build-args: ""
+            smoke-flags: --pandoc
+          # Every optional component on, and Pandoc off, to cover both branches.
+          - variant: extras
+            build-args: >-
+              --build-arg INSTALL_PANDOC=false
+              --build-arg INSTALL_TECTONIC=true
+              --build-arg INSTALL_PDF_CLASSIFIER=true
+            smoke-flags: --tectonic --pdf-classifier
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve newest ARS release
+        run: |
+          latest="$(git ls-remote --tags --refs "$ARS_REPO" \
+            | sed 's|.*refs/tags/||' | grep -E '^v[0-9]+(\.[0-9]+)*$' | sort -V | tail -n 1)"
+          test -n "$latest"
+          echo "ARS_LATEST=$latest" >> "$GITHUB_ENV"
+
+      - name: Build with bin/ars-build
+        run: bin/ars-build ${{ matrix.build-args }}
+
+      - name: Image has the newest ARS release and is tagged with it
+        run: |
+          ref="$(docker run --rm --entrypoint cat ars-sandbox:latest /opt/ars/.ars-ref)"
+          echo "installed: $ref, newest: $ARS_LATEST"
+          test "$ref" = "$ARS_LATEST"
+          docker image inspect "ars-sandbox:$ref" > /dev/null
+
+      - name: Smoke tests through bin/ars
+        run: bin/ars --shell tests/smoke.sh ${{ matrix.smoke-flags }}
+
+      - name: Plain docker build resolves the newest ARS release itself
+        if: matrix.variant == 'default'
+        run: |
+          docker build --build-arg "UID=$(id -u)" --build-arg "GID=$(id -g)" -t ars-sandbox:plain .
+          ref="$(docker run --rm --entrypoint cat ars-sandbox:plain /opt/ars/.ars-ref)"
+          echo "installed: $ref, newest: $ARS_LATEST"
+          test "$ref" = "$ARS_LATEST"
