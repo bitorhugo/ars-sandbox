@@ -10,7 +10,8 @@ home directory, SSH keys or host `~/.claude`.
 ## What's in the image
 
 - Claude Code (npm, auto-updater disabled; rebuild to upgrade)
-- ARS cloned at a pinned release tag into `/opt/ars`, loaded with `--plugin-dir`
+- ARS at its newest release (or a tag you choose), cloned into `/opt/ars` and
+  loaded with `--plugin-dir`
 - Python venv with ARS's `requirements-dev.txt`, plus `bash`, `jq`, `curl`, `git`
   for its hooks and scripts
 - Pandoc for DOCX output (on by default), tectonic for PDF output (off by default)
@@ -54,7 +55,7 @@ Build options (`ars-build`):
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `ARS_SANDBOX_ARS_REF` | `v3.23.0` | ARS git tag or branch to bake in |
+| `ARS_SANDBOX_ARS_REF` | `latest` | ARS tag or branch to bake in; `latest` is the newest `vX.Y.Z` release |
 | `ARS_SANDBOX_IMAGE` | `ars-sandbox:latest` | image tag (also tagged `:<ARS ref>`) |
 
 Other `docker build` options pass straight through, for example:
@@ -87,13 +88,21 @@ Put long-lived values in the env file rather than your shell profile.
 ## Upgrading ARS
 
 Because the plugin directory is read-only, ARS's own update check is turned off
-(`ARS_UPDATE_CHECK=0`). To upgrade:
+(`ARS_UPDATE_CHECK=0`). Rerun `ars-build` to pick up a new ARS release: it looks
+up the newest release tag before building, so Docker's cache is invalidated only
+when a new release exists. The image is tagged `ars-sandbox:latest` and with the
+ARS version (for example `ars-sandbox:v3.23.0`). Inside the container,
+`/opt/ars/.ars-ref` records the version that was installed.
+
+To pin a specific version instead:
 
 ```sh
-ARS_SANDBOX_ARS_REF=v3.24.0 ars-build
+ARS_SANDBOX_ARS_REF=v3.22.2 ars-build
 ```
 
-Or change the default `ARS_REF` in `Dockerfile` and `bin/ars-build`.
+A plain `docker build .` also installs the newest release, but because the
+build argument stays `latest`, Docker reuses the cached layer until you pass
+`--no-cache`.
 
 ## Licensing note
 

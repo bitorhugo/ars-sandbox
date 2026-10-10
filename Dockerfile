@@ -1,14 +1,15 @@
 # syntax=docker/dockerfile:1
 #
 # Isolated Claude Code image with the academic-research-skills (ARS) plugin
-# baked in at a pinned version. Build with bin/ars-build, run with bin/ars.
+# baked in at its newest release (or a chosen tag). Build with bin/ars-build, run with bin/ars.
 
 FROM node:22-bookworm-slim
 
-# ARS release to bake in. Bump and rebuild to upgrade (the in-session update
-# check is disabled because the plugin directory is read-only).
+# ARS version to bake in: "latest" resolves to the newest vX.Y.Z release tag.
+# Rebuild to upgrade (the in-session update check is disabled because the
+# plugin directory is read-only).
 ARG ARS_REPO=https://github.com/Imbad0202/academic-research-skills.git
-ARG ARS_REF=v3.23.0
+ARG ARS_REF=latest
 ARG CLAUDE_CODE_VERSION=latest
 # Optional ARS output formats: Pandoc for DOCX, tectonic for APA 7.0 PDF.
 ARG INSTALL_PANDOC=true
@@ -43,8 +44,14 @@ RUN if [ "$INSTALL_TECTONIC" = "true" ]; then \
 RUN npm install -g "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}" \
     && npm cache clean --force
 
-RUN git clone --depth 1 --branch "$ARS_REF" "$ARS_REPO" /opt/ars \
-    && rm -rf /opt/ars/.git
+RUN ref="$ARS_REF" \
+    && if [ "$ref" = "latest" ]; then \
+        ref="$(git ls-remote --tags --refs "$ARS_REPO" \
+            | sed 's|.*refs/tags/||' | grep -E '^v[0-9]+(\.[0-9]+)*$' | sort -V | tail -n 1)" \
+        && [ -n "$ref" ]; fi \
+    && git clone --depth 1 --branch "$ref" "$ARS_REPO" /opt/ars \
+    && rm -rf /opt/ars/.git \
+    && echo "$ref" > /opt/ars/.ars-ref
 
 RUN python3 -m venv /opt/venv \
     && /opt/venv/bin/pip install --no-cache-dir -r /opt/ars/requirements-dev.txt \
@@ -63,7 +70,7 @@ ENV PATH="/opt/venv/bin:$PATH" \
     ARS_UPDATE_CHECK=0
 
 LABEL org.opencontainers.image.title="ars-sandbox" \
-      org.opencontainers.image.description="Claude Code with academic-research-skills ${ARS_REF}"
+      org.opencontainers.image.description="Claude Code with academic-research-skills"
 
 USER claude
 WORKDIR /work
