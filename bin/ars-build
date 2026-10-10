@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Build the ars-sandbox image. Extra arguments are passed to `docker build`
+# (e.g. --no-cache, --build-arg INSTALL_TECTONIC=true).
+set -euo pipefail
+
+REPO_ROOT="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)"
+IMAGE="${ARS_SANDBOX_IMAGE:-ars-sandbox:latest}"
+ARS_REF="${ARS_SANDBOX_ARS_REF:-v3.23.0}"
+
+docker build \
+  --build-arg "ARS_REF=$ARS_REF" \
+  --build-arg "UID=$(id -u)" \
+  --build-arg "GID=$(id -g)" \
+  -t "$IMAGE" \
+  -t "${IMAGE%%:*}:$ARS_REF" \
+  "$@" \
+  "$REPO_ROOT"

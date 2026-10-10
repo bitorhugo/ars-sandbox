@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+# Run Claude Code with ARS inside the sandbox, mounting the current directory
+# (or $ARS_SANDBOX_WORKSPACE) as the only host path the container can see.
+#
+#   ars [claude args...]   start Claude Code with the ARS plugin loaded
+#   ars --shell            open a bash shell in the container instead
+set -euo pipefail
+
+IMAGE="${ARS_SANDBOX_IMAGE:-ars-sandbox:latest}"
+HOME_VOLUME="${ARS_SANDBOX_HOME_VOLUME:-ars-sandbox-home}" # auth, settings, caches; never the host ~/.claude
+WORKSPACE="$(cd "${ARS_SANDBOX_WORKSPACE:-$PWD}" && pwd)"
+MEMORY="${ARS_SANDBOX_MEMORY:-4g}"
+PIDS="${ARS_SANDBOX_PIDS:-512}"
+ENV_FILE="${ARS_SANDBOX_ENV_FILE:-${XDG_CONFIG_HOME:-$HOME/.config}/ars-sandbox/env}"
+
+if [ "$WORKSPACE" = "$HOME" ] || [ "$WORKSPACE" = "/" ]; then
+  echo "ars: refusing to mount $WORKSPACE; run from a project directory" >&2
+  exit 1
+fi
+
+# Mount under the project's own name so Claude Code keeps separate
+# per-project history and memory inside the shared home volume.
+CONTAINER_DIR="/work/$(basename "$WORKSPACE")"
+
+args=(
+  --rm -i
+  --cap-drop ALL
+  --security-opt no-new-privileges:true
+  --pids-limit "$PIDS"
+  --memory "$MEMORY"
+  --read-only
+  --tmpfs /tmp:rw,exec,size=512m
+  -v "$WORKSPACE:$CONTAINER_DIR"
+  -v "$HOME_VOLUME:/home/claude"
+  -w "$CONTAINER_DIR"
+)
+if [ -t 0 ] && [ -t 1 ]; then args+=(-t); fi
+if [ -f "$ENV_FILE" ]; then args+=(--env-file "$ENV_FILE"); fi
+
+# Forward credentials and ARS settings from the host environment when set.
+for var in ANTHROPIC_API_KEY CLAUDE_CODE_OAUTH_TOKEN OPENAI_API_KEY GEMINI_API_KEY \
+           OPENALEX_API_KEY OPENALEX_POLITE_EMAIL CROSSREF_POLITE_EMAIL; do
+  if [ -n "${!var:-}" ]; then args+=(-e "$var"); fi
+done
+while IFS= read -r var; do
+  case "$var" in ARS_SANDBOX_*) ;; *) args+=(-e "$var") ;; esac
+done < <(compgen -e | grep '^ARS_' || true)
+
+if [ "${1:-}" = "--shell" ]; then
+  shift
+  exec docker run "${args[@]}" --entrypoint bash "$IMAGE" "$@"
+fi
+
+exec docker run "${args[@]}" "$IMAGE" "$@"

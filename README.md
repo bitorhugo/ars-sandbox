@@ -1,0 +1,102 @@
+# ars-sandbox
+
+Run [Claude Code](https://docs.claude.com/en/docs/claude-code) with the
+[academic-research-skills](https://github.com/Imbad0202/academic-research-skills)
+(ARS) plugin inside an isolated Docker container.
+
+The container sees one host directory (your project) and nothing else: not your
+home directory, SSH keys or host `~/.claude`.
+
+## What's in the image
+
+- Claude Code (npm, auto-updater disabled; rebuild to upgrade)
+- ARS cloned at a pinned release tag into `/opt/ars`, loaded with `--plugin-dir`
+- Python venv with ARS's `requirements-dev.txt`, plus `bash`, `jq`, `curl`, `git`
+  for its hooks and scripts
+- Pandoc for DOCX output (on by default), tectonic for PDF output (off by default)
+
+## Quick start
+
+```sh
+git clone <this repo> ~/github/ars-sandbox
+ln -s ~/github/ars-sandbox/bin/ars ~/github/ars-sandbox/bin/ars-build ~/.local/bin/
+
+ars-build                  # build the image
+cd ~/papers/my-paper
+ars                        # start Claude Code with ARS in this directory
+```
+
+On first run, log in from inside Claude Code, or set `ANTHROPIC_API_KEY` or
+`CLAUDE_CODE_OAUTH_TOKEN` (from `claude setup-token`) on the host. The login is
+kept in the `ars-sandbox-home` Docker volume and shared by every project.
+
+```sh
+ars -p "lit-review this"   # any extra arguments go to claude
+ars --shell                # bash shell in the container, for debugging
+```
+
+## Isolation
+
+`bin/ars` runs the container with:
+
+- only the current directory mounted, at `/work/<dir-name>` (refuses `$HOME` and `/`)
+- a read-only root filesystem, with a 512 MB tmpfs at `/tmp`
+- all Linux capabilities dropped, `no-new-privileges`, and memory and process limits
+- a non-root user with your host UID/GID, so files it writes are owned by you
+- a dedicated home volume for Claude Code auth, settings, history and caches
+
+Network access is not restricted. Claude Code needs the API, and ARS reaches out
+to citation sources (OpenAlex, Crossref and others) while it works.
+
+## Configuration
+
+Build options (`ars-build`):
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `ARS_SANDBOX_ARS_REF` | `v3.23.0` | ARS git tag or branch to bake in |
+| `ARS_SANDBOX_IMAGE` | `ars-sandbox:latest` | image tag (also tagged `:<ARS ref>`) |
+
+Other `docker build` options pass straight through, for example:
+
+```sh
+ars-build --build-arg INSTALL_TECTONIC=true          # PDF output (+ CJK fonts)
+ars-build --build-arg INSTALL_PANDOC=false
+ars-build --build-arg INSTALL_PDF_CLASSIFIER=true    # optional ARS PDF classifier
+ars-build --build-arg CLAUDE_CODE_VERSION=2.1.295
+ars-build --no-cache
+```
+
+Run options (`ars`):
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `ARS_SANDBOX_WORKSPACE` | `$PWD` | host directory to mount |
+| `ARS_SANDBOX_HOME_VOLUME` | `ars-sandbox-home` | volume for the container home; set per project for separate logins |
+| `ARS_SANDBOX_ENV_FILE` | `~/.config/ars-sandbox/env` | env file passed to the container, if present |
+| `ARS_SANDBOX_MEMORY` | `4g` | memory limit |
+| `ARS_SANDBOX_PIDS` | `512` | process limit |
+| `ARS_SANDBOX_IMAGE` | `ars-sandbox:latest` | image to run |
+
+These host variables are passed into the container when they are set:
+`ANTHROPIC_API_KEY`, `CLAUDE_CODE_OAUTH_TOKEN`, `OPENAI_API_KEY`, `GEMINI_API_KEY`,
+`OPENALEX_API_KEY`, `OPENALEX_POLITE_EMAIL`, `CROSSREF_POLITE_EMAIL`, and every
+`ARS_*` variable (for example `ARS_CROSS_MODEL`), except `ARS_SANDBOX_*`.
+Put long-lived values in the env file rather than your shell profile.
+
+## Upgrading ARS
+
+Because the plugin directory is read-only, ARS's own update check is turned off
+(`ARS_UPDATE_CHECK=0`). To upgrade:
+
+```sh
+ARS_SANDBOX_ARS_REF=v3.24.0 ars-build
+```
+
+Or change the default `ARS_REF` in `Dockerfile` and `bin/ars-build`.
+
+## Licensing note
+
+ARS is licensed CC BY-NC 4.0. This repository does not include ARS source code;
+the image downloads it at build time. If you publish a built image, you are
+redistributing ARS, and its license terms apply.
