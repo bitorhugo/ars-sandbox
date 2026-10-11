@@ -1,5 +1,0 @@
-ignored:
-  # Unpinned apt and npm packages are deliberate: the image tracks current
-  # Debian security updates and the newest Claude Code. CI rebuilds weekly.
-  - DL3008
-  - DL3016

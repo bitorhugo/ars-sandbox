@@ -21,7 +21,6 @@ fi
 # Mount under the project's own name so Claude Code keeps separate
 # per-project history and memory inside the shared home volume.
 CONTAINER_DIR="/work/$(basename "$WORKSPACE")"
-TMPFS_OPTS="rw,exec,size=512m"
 
 args=(
   --rm -i \

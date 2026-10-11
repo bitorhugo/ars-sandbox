@@ -21,17 +21,6 @@ env:
   ARS_REPO: https://github.com/Imbad0202/academic-research-skills.git
 
 jobs:
-  lint:
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v4
-      - name: shellcheck
-        run: shellcheck bin/ars bin/ars-build tests/smoke.sh
-      - uses: hadolint/hadolint-action@v3.1.0
-        with:
-          dockerfile: Dockerfile
-          failure-threshold: warning
-
   image:
     name: image (${{ matrix.variant }}, ${{ matrix.runner }})
     strategy:

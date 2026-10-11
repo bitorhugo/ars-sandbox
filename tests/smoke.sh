@@ -1,7 +1,4 @@
 #!/usr/bin/env bash
-# shellcheck disable=SC2016
-# (The bash -c bodies are single-quoted on purpose: they expand in the subshell.)
-#
 # Smoke tests for the ars-sandbox image. Runs INSIDE the container, launched
 # through the real run configuration from the repo root:
 #
