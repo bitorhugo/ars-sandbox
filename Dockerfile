@@ -24,10 +24,11 @@ ARG INSTALL_PDF_CLASSIFIER=false
 ARG UID=1000
 ARG GID=1000
 
-# bash, jq, curl and python3 are required by the ARS hooks and scripts.
+# bash, jq, curl and python3 are required by the ARS hooks and scripts;
+# wget is for downloads Claude makes during a session.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        bash ca-certificates curl git jq python3 python3-venv \
+        bash ca-certificates curl git jq python3 python3-venv wget \
     && if [ "$INSTALL_PANDOC" = "true" ]; then \
         apt-get install -y --no-install-recommends pandoc; fi \
     && if [ "$INSTALL_TECTONIC" = "true" ]; then \

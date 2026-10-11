@@ -32,7 +32,7 @@ check() {
 }
 
 # --- tools -------------------------------------------------------------------
-for tool in bash jq curl git python3 claude; do
+for tool in bash jq curl wget git python3 claude; do
   check "$tool is on PATH" command -v "$tool"
 done
 check "claude runs" claude --version
@@ -81,6 +81,12 @@ check "workspace is writable" bash -c 'f=$(mktemp -p .) && rm "$f"'
 # Non-root has no effective capabilities anyway; the bounding set shows --cap-drop ALL.
 check "capabilities dropped" bash -c 'grep -q "^CapBnd:[[:space:]]*0*$" /proc/self/status'
 check "no-new-privileges set" bash -c 'grep -q "^NoNewPrivs:[[:space:]]*1$" /proc/self/status'
+
+# --- network -----------------------------------------------------------------
+# Claude Code needs the API and ARS queries citation sources. Without -f, curl
+# succeeds on any HTTP response, so a 4xx from the API root still means reachable.
+check "Anthropic API reachable (curl)" curl -sS -m 20 -o /dev/null https://api.anthropic.com/
+check "OpenAlex reachable (wget)" wget -q -T 20 -O /dev/null https://api.openalex.org/
 
 echo
 if [ "$failures" -gt 0 ]; then

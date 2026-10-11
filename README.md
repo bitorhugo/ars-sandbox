@@ -15,7 +15,7 @@ home directory, SSH keys or host `~/.claude`.
 - ARS at its newest release (or a tag you choose), cloned into `/opt/ars` and
   loaded with `--plugin-dir`
 - Python venv with ARS's `requirements-dev.txt`, plus `bash`, `jq`, `curl`, `git`
-  for its hooks and scripts
+  for its hooks and scripts, and `wget`
 - Pandoc for DOCX output (on by default), tectonic for PDF output (off by default)
 
 ## Quick start
