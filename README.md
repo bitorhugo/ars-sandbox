@@ -1,5 +1,7 @@
 # ars-sandbox
 
+[![test](https://github.com/bitorhugo/academic-research-sandbox/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/bitorhugo/academic-research-sandbox/actions/workflows/test.yml)
+
 Run [Claude Code](https://docs.claude.com/en/docs/claude-code) with the
 [academic-research-skills](https://github.com/Imbad0202/academic-research-skills)
 (ARS) plugin inside an isolated Docker container.
@@ -56,7 +58,7 @@ Build options (`ars-build`):
 | Variable | Default | Purpose |
 |---|---|---|
 | `ARS_SANDBOX_ARS_REF` | `latest` | ARS tag or branch to bake in; `latest` is the newest `vX.Y.Z` release |
-| `ARS_SANDBOX_IMAGE` | `ars-sandbox:latest` | image tag (also tagged `:<ARS ref>`) |
+| `ARS_SANDBOX_IMAGE` | `ars-sandbox:latest` | image tag |
 
 Other `docker build` options pass straight through, for example:
 
@@ -90,9 +92,8 @@ Put long-lived values in the env file rather than your shell profile.
 Because the plugin directory is read-only, ARS's own update check is turned off
 (`ARS_UPDATE_CHECK=0`). Rerun `ars-build` to pick up a new ARS release: it looks
 up the newest release tag before building, so Docker's cache is invalidated only
-when a new release exists. The image is tagged `ars-sandbox:latest` and with the
-ARS version (for example `ars-sandbox:v3.23.0`). Inside the container,
-`/opt/ars/.ars-ref` records the version that was installed.
+when a new release exists. The image is tagged `ars-sandbox:latest`; inside the
+container, `/opt/ars/.ars-ref` records the ARS version that was installed.
 
 To pin a specific version instead:
 
@@ -110,7 +111,7 @@ build argument stays `latest`, Docker reuses the cached layer until you pass
 (to catch new ARS or Claude Code releases that break the image) and on demand.
 It builds the image on amd64 and arm64 in two variants: the default, and one
 with the optional components flipped (no Pandoc; tectonic and the PDF classifier
-on). Each build checks that the newest ARS release was installed and tagged, and runs
+on). Each build checks that the newest ARS release was installed and runs
 `tests/smoke.sh` through `bin/ars`, so the tests use the real isolation settings.
 
 Run the smoke tests locally after a build:

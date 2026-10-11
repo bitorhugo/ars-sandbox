@@ -53,12 +53,11 @@ jobs:
       - name: Build with bin/ars-build
         run: bin/ars-build ${{ matrix.build-args }}
 
-      - name: Image has the newest ARS release and is tagged with it
+      - name: Image has the newest ARS release
         run: |
           ref="$(docker run --rm --entrypoint cat ars-sandbox:latest /opt/ars/.ars-ref)"
           echo "installed: $ref, newest: $ARS_LATEST"
           test "$ref" = "$ARS_LATEST"
-          docker image inspect "ars-sandbox:$ref" > /dev/null
 
       - name: Smoke tests through bin/ars
         run: bin/ars --shell tests/smoke.sh ${{ matrix.smoke-flags }}

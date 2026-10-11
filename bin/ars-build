@@ -10,7 +10,7 @@ ARS_REF="${ARS_SANDBOX_ARS_REF:-latest}"
 
 # Resolve "latest" here rather than only inside the Dockerfile: passing the
 # concrete tag as a build arg invalidates Docker's layer cache when a new ARS
-# release appears, and lets us tag the image with the ARS version.
+# release appears.
 if [ "$ARS_REF" = "latest" ]; then
   ARS_REF="$(git ls-remote --tags --refs "$ARS_REPO" \
     | sed 's|.*refs/tags/||' | grep -E '^v[0-9]+(\.[0-9]+)*$' | sort -V | tail -n 1 || true)"
@@ -27,6 +27,5 @@ docker build \
   --build-arg "UID=$(id -u)" \
   --build-arg "GID=$(id -g)" \
   -t "$IMAGE" \
-  -t "${IMAGE%%:*}:$ARS_REF" \
   "$@" \
   "$REPO_ROOT"
