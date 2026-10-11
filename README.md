@@ -20,13 +20,34 @@ home directory, SSH keys or host `~/.claude`.
 
 ## Quick start
 
-```sh
-git clone <this repo> ~/github/ars-sandbox
-ln -s ~/github/ars-sandbox/bin/ars ~/github/ars-sandbox/bin/ars-build ~/.local/bin/
+Clone the repository anywhere you like and build the image:
 
-ars-build                  # build the image
-cd ~/papers/my-paper
-ars                        # start Claude Code with ARS in this directory
+```sh
+git clone https://github.com/bitorhugo/academic-research-sandbox.git
+cd academic-research-sandbox
+bin/ars-build              # build the image
+```
+
+Optionally, put the scripts on your `PATH` so you can run `ars` from any
+directory. Either add the repository's `bin` directory to `PATH` in your shell
+profile (`~/.zshrc`, `~/.bashrc`, ...):
+
+```sh
+export PATH="/path/to/academic-research-sandbox/bin:$PATH"
+```
+
+or symlink the scripts into a directory already on your `PATH`, from the
+repository root:
+
+```sh
+ln -s "$PWD/bin/ars" "$PWD/bin/ars-build" ~/.local/bin/
+```
+
+Then start Claude Code with ARS from your project directory:
+
+```sh
+cd /path/to/your/project
+ars                        # or /path/to/academic-research-sandbox/bin/ars
 ```
 
 On first run, log in from inside Claude Code, or set `ANTHROPIC_API_KEY` or
