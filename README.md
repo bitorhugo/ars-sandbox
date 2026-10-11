@@ -16,7 +16,7 @@ home directory, SSH keys or host `~/.claude`.
   loaded with `--plugin-dir`
 - Python venv with ARS's `requirements-dev.txt`, plus `bash`, `jq`, `curl`, `git`
   for its hooks and scripts, and `wget`
-- Pandoc for DOCX output (on by default), tectonic for PDF output (off by default)
+- Pandoc for DOCX output and tectonic (with CJK fonts) for PDF output, both on by default
 
 ## Quick start
 
@@ -84,8 +84,8 @@ Build options (`ars-build`):
 Other `docker build` options pass straight through, for example:
 
 ```sh
-ars-build --build-arg INSTALL_TECTONIC=true          # PDF output (+ CJK fonts)
-ars-build --build-arg INSTALL_PANDOC=false
+ars-build --build-arg INSTALL_TECTONIC=false         # no PDF output (smaller image)
+ars-build --build-arg INSTALL_PANDOC=false           # no DOCX output
 ars-build --build-arg INSTALL_PDF_CLASSIFIER=true    # optional ARS PDF classifier
 ars-build --build-arg CLAUDE_CODE_VERSION=2.1.295
 ars-build --no-cache
@@ -131,7 +131,7 @@ build argument stays `latest`, Docker reuses the cached layer until you pass
 `.github/workflows/test.yml` runs on pushes to `main`, on pull requests, weekly
 (to catch new ARS or Claude Code releases that break the image) and on demand.
 It builds the image on amd64 and arm64 in two variants: the default, and one
-with the optional components flipped (no Pandoc; tectonic and the PDF classifier
+with the optional components flipped (no Pandoc or tectonic; the PDF classifier
 on). Each build checks that the newest ARS release was installed and runs
 `tests/smoke.sh` through `bin/ars`, so the tests use the real isolation settings.
 

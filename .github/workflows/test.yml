@@ -31,14 +31,14 @@ jobs:
         include:
           - variant: default
             build-args: ""
-            smoke-flags: --pandoc
-          # Every optional component on, and Pandoc off, to cover both branches.
+            smoke-flags: --pandoc --tectonic
+          # Every optional component flipped, to cover both branches.
           - variant: extras
             build-args: >-
               --build-arg INSTALL_PANDOC=false
-              --build-arg INSTALL_TECTONIC=true
+              --build-arg INSTALL_TECTONIC=false
               --build-arg INSTALL_PDF_CLASSIFIER=true
-            smoke-flags: --tectonic --pdf-classifier
+            smoke-flags: --pdf-classifier
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v4

@@ -16,7 +16,7 @@ ARG ARS_REF=latest
 ARG CLAUDE_CODE_VERSION=latest
 # Optional ARS output formats: Pandoc for DOCX, tectonic for APA 7.0 PDF.
 ARG INSTALL_PANDOC=true
-ARG INSTALL_TECTONIC=false
+ARG INSTALL_TECTONIC=true
 ARG TECTONIC_VERSION=0.15.0
 # Optional native PDF content classifier (scripts/pdf_content_classifier_worker.py).
 ARG INSTALL_PDF_CLASSIFIER=false
